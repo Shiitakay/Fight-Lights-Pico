@@ -4,7 +4,6 @@ code = "" #hold the code for main.py when launching from config
 
 leniency_counter = 0 #increases every iteration of the main loop, resets when value reaches config.leniency
 string_leniency = 0 #unused currently
-main_cnt = 0 # increases every iteration of the main loop
 i = 0 #increases every time the leniency_counter hits the value defined in config.py leniency
 temp_brightness = 0
 
@@ -19,17 +18,27 @@ start_pos = 0
 timer_counter = 0
 
 
-
 #value to which the timer counter gets reset after a button press,
 #ideally it should be 0, but if the frequency is too high and the setback value is too high as well (aka 0 or >-5)...
 #...the timer interrupt overrides the value too fast for other functions to register properly
 setback_value = -10
 
 #counter for idle mode, gets set to setback_value on button press
-idle_counter = 0
+bg_counter = 0
 
-#is set at program start by the function idle_after()
-idle_ticks = 0
+#storage for all the bg anims
+main_ctr = 0
+main_inc = 1
+bg_colour_id = 0
+cycle_bg_colour = True
+breathing_ar = [i for i in range(0,255)]
+breathing_ar.extend([i for i in range(255, -1, -1)])
+breathing_ar_len = len(breathing_ar) - 1
+
+runner_list = []
+
+#is set at program start by the function bg_after()
+bg_ticks = 0
 
 tmp_brightness = 1
 
@@ -37,7 +46,6 @@ tmp_brightness = 1
 #frequency in hz at which the timer interrups happen
 frequency = 60
 
-no_buttons_pressed = False
 press_cnt = 0
 
 random_color = 0
@@ -60,7 +68,6 @@ button_list_length = 0
 #do not change (except you know what you are doing)
 timer1 = machine.Timer() #timer for timer the interrupts
 timer2 = machine.Timer() #debounce timer for brightness
-timer3 = machine.Timer()
 timer4 = machine.Timer() #timer for player LED update
 
 mode_selector = 0 #should not be reset on mode select

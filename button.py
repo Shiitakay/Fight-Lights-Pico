@@ -8,9 +8,8 @@ import machine
 
 
 #button class
-class MyButton:
+class button:
     name = ""
-    num_presses = 0 #increases for every press
     colorRGB = (0,0,0) #the rgb color the button, this changes for every iteration
     savedRGB = (0,0,0) #this changes only when pressed
     led_list = [] #holds the same list as config[0]
@@ -24,7 +23,7 @@ class MyButton:
     released = False #flag to track if the button has been released
     time = 0 #time to track the interpolation
     bg_colors = ()#current background color before fade
-    config = ((-1,), (0,0,0), False, 1) #(list of leds, color, Fade on or off, brightness): gets its values from config.py
+    config = ((0,0,0), False, 1) #(list of leds, color, Fade on or off, brightness): gets its values from config.py
     brightness = 1 #brightness when the button is pressed, values between 0 - 1
     last_color = (0,0,0)
     fadein_speed = 0
@@ -38,10 +37,10 @@ class MyButton:
         
         
     #gets called from the config.py to set the config variable and the led_list variable
-    def set_config(self, led_locations, color, fade, brightness, fadein_speed, fadeout_speed):
+    def set_config(self, led_list, color, fade, brightness, fadein_speed, fadeout_speed):
         self.fade = fade
-        self.config = ((led_locations),color, self.fade)
-        self.led_list = led_locations
+        self.config = (color, self.fade)
+        self.led_list = led_list
         self.brightness = brightness
         self.fadein_speed = fadein_speed
         self.fadeout_speed = fadeout_speed
@@ -49,80 +48,33 @@ class MyButton:
         
     #run function, controls all behaviour of a button, on press, when released and when currently not pressed
     #gets permanently called from the main loop
-    def run(self, random_color_id):
+    def run(self):
         self.released = False
-        if self.config[0][0] > -1: #do nothing if the button is set to -1 in config.py
-            self.was_pressed = False
-            if not self.pin.value():
-                self.counter = self.counter +1
-                ######################when the button was just pressed###########################
-                if self.counter == 1:
-                    for button in config.button_list:
-                        button.highest_prio = False
-                    self.highest_prio = True
-                    self.was_pressed = True
-                    self.num_presses += 1
-                    
-                    self.bg_colors = ()
-                    for i in range(len(self.led_list)):
-                        self.bg_colors = self.bg_colors + (functions.get_pixelcolor(self.led_list[i]-1),)
-                        
-                    
-                ######################when the button is pressed###########################
-                if self.config[0][0] > 0:                        
-                    if self.fade == True:
-                        if self.time <= 100:
-                            self.time = functions.fade_val_inc(self.time, self.fadein_speed) #increases the time value through the function fade_val
-                            if self.config[0][0] > 0: #when led position is not defined but button active
-                                for i in range(len(self.led_list)): #loops through led_list
-                                #sets all the colors with interpolated value between the background color and the color of press at the time of self.time
-                                    if not init.timer_lock:
-                                        lerp_color = functions.lerp_rgb(self.bg_colors[i], self.savedRGB,self.time)
-                                        functions.pixels_set(self.led_list[i]-1, lerp_color)
-                    else:
-                        for i in range(len(self.led_list)): #loops through all numbers defined in led_list
-                            if not init.timer_lock:
-                                functions.pixels_set(self.led_list[i]-1, self.colorRGB)#sets all pixel at the pos i to the color of colorRGB
-                self.savedRGB = self.colorRGB
-                self.is_pressed = True
+        # this is checking if the button has any leds assigned to it
+        if self.led_list[0] < 0: #do nothing if the button is set to -1 in config.py
+            return
+        self.was_pressed = False
+        if not self.pin.value():
+            self.counter = self.counter +1
+            ######################when the button was just pressed###########################
+            if self.counter == 1:
+                self.was_pressed = True
+            ######################when the button is pressed###########################
+            self.is_pressed = True
+            init.bg_counter = init.setback_value #sets back the idle counter, so idle mode doesn't trigger during a press
+
+        else:
+            #############when the button was just released#########################
+            if self.counter != 0:
+                self.counter = 0
+                self.released = True
                 self.was_released = True
-                init.idle_counter = init.setback_value #sets back the idle counter, so idle mode doesn't trigger during a press
+            elif self.counter == 0:
+                self.was_released = False
                 
-                
-            else:
-                #############when the button was just released#########################
-                if self.was_released == True:
-                    self.counter = 0
-                    self.released = True
-                    self.was_released = False
-                    self.last_color = self.colorRGB
-                   
-                
-                ################when the button is currently not pressed###############
-                if self.fade == True: #when fade for that button is enabled
-                    if self.time > 0:
-                        self.time = functions.fade_val_dec(self.time, self.fadeout_speed) #decreases the time value through the function fade_val
-                        if self.config[0][0] > 0: #when led position is not defined but button active
-                            for i in range(len(self.led_list)): #loops through led_list
-                                #sets all the colors with interpolated value between the background color and the color of press at the time of self.time
-                                if not init.timer_lock:
-                                    lerp_color = functions.lerp_rgb(self.bg_colors[i], self.savedRGB,self.time)
-                                    functions.pixels_set(self.led_list[i]-1, lerp_color)
-                                    
-                                
-                                
-                    
-                self.is_pressed = False
-                if self.config[1] == 'random': #gives the button a random color if second variable of config of a button is 'random'
-                    tmp = functions.RGBtoHSV(config.colors[random_color_id])
-                    tmp = (tmp[0],tmp[1],tmp[2]*self.brightness)
-                    tmp = functions.HSVtoRGB(tmp)
-                    self.colorRGB = tmp
-                else:#gives the button a defined color if second variable of config is a color
-                    tmp = functions.RGBtoHSV(self.config[1])
-                    tmp = (tmp[0],tmp[1],tmp[2]*self.brightness)
-                    tmp = functions.HSVtoRGB(tmp)
-                    self.colorRGB = tmp
+            
+            ################when the button is currently not pressed###############   
+            self.is_pressed = False
                 
 
         

@@ -27,72 +27,76 @@ light_blue = (0,193,255)
 violet = (170,0,255)
 pink = (255,0,170)
 cyan = (0,255,255)
-white = (255,255,255)
 
-colors = [red,orange,light_orange,yellow,lime,green,turqoise,blue,light_blue,violet,pink,cyan,white]
+colors = [red,orange,light_orange,yellow,lime,green,turqoise,blue,light_blue,violet,pink,cyan]
+num_colours = len(colors)
+bg_colour_index = 0
+bg_speed = 1
 
-idle_mode1_colors = colors
-idle_mode1_speed = 5
-profile_name = "Profile 1"
-led_count = 8
+profile_name = "OneButtonPer"
+led_count = 38
 PIN_NUM = 0
 leniency = 1
 brightness_mod = 1
 brightness_steps = 0.1
-idle_mode = 1
-idle_after = 30
+bg_mode = 0
+bg_after = 10
 save_stats = False
 input_reset_time = 50
-profile_color = (0,6,255)
+profile_color = (255,0,0)
 clear_background_on_press = False
-background = ((0.05,blue,1),(0.05,blue,2),(0.05,blue,3),(0.05,blue,4),(0.05,blue,5),(0.05,blue,6),(0.05,blue,7),(0.05,blue,8))
-up_MyButton = button.MyButton(1, 'up', functions.clear_led)
-down_MyButton = button.MyButton(2, 'down', functions.clear_led)
-right_MyButton = button.MyButton(3, 'right', functions.clear_led)
-left_MyButton = button.MyButton(4, 'left', functions.clear_led)
-select_MyButton = button.MyButton(5, 'select', functions.clear_led)
-ps_MyButton = button.MyButton(6, 'ps', functions.clear_led)
-start_MyButton = button.MyButton(7, 'start', functions.clear_led)
-square_MyButton = button.MyButton(8, 'square', functions.clear_led)
-triangle_MyButton = button.MyButton(9, 'triangle', functions.clear_led)
-r1_MyButton = button.MyButton(10, 'r1', functions.clear_led)
-l1_MyButton = button.MyButton(11, 'l1', functions.clear_led)
-circle_MyButton = button.MyButton(12, 'circle', functions.clear_led)
-x_MyButton = button.MyButton(13, 'x', functions.clear_led)
-l2_MyButton = button.MyButton(14, 'l2', functions.clear_led)
-r2_MyButton = button.MyButton(15, 'r2', functions.clear_led)
+background = ((1,blank,1),(1,blank,2),(1,blank,3),(1,blank,4),(1,blank,5),(1,blank,6),(1,blank,7),(1,blank,8),(1,blank,9),(1,blank,10),(1,blank,11),(1,blank,12),(1,blank,13),(1,blank,14),(1,blank,15),(1,blank,16),(1,blank,17),(1,blank,18),(1,blank,19),(1,blank,20),(1,blank,21),(1,blank,22),(1,blank,23),(1,blank,24),(1,blank,25),(1,blank,26),(1,blank,27),(1,blank,28),(1,blank,29),(1,blank,30),(1,blank,31),(1,blank,32),(1,blank,33),(1,blank,34),(1,blank,35),(1,blank,36),(1,blank,37),(1,blank,38))
 
-button_list = [up_MyButton,down_MyButton,right_MyButton,left_MyButton,select_MyButton,ps_MyButton,start_MyButton,square_MyButton,triangle_MyButton,r1_MyButton,l1_MyButton,circle_MyButton,x_MyButton,l2_MyButton,r2_MyButton]
+#-----------init buttons
+up_button		 = button.button(1, 'up', functions.clear_led)
+down_button		 = button.button(2, 'down', functions.clear_led)
+right_button	 = button.button(3, 'right', functions.clear_led)
+left_button		 = button.button(4, 'left', functions.clear_led)
+
+ps_button		 = button.button(6, 'ps', functions.clear_led)
+
+square_button	 = button.button(8, 'square', functions.clear_led)
+triangle_button	 = button.button(9, 'triangle', functions.clear_led)
+r1_button		 = button.button(10, 'r1', functions.clear_led)
+l1_button		 = button.button(11, 'l1', functions.clear_led)
+
+circle_button	 = button.button(12, 'circle', functions.clear_led)
+x_button		 = button.button(13, 'x', functions.clear_led)
+l2_button		 = button.button(14, 'l2', functions.clear_led)
+r2_button		 = button.button(15, 'r2', functions.clear_led)
+
+button_list 	= [up_button, down_button, right_button, left_button, ps_button, square_button, triangle_button,
+                    r1_button, l1_button, circle_button, x_button, l2_button, r2_button]
 init.button_list_length = len(button_list)
 
 
-up_MyButton.set_config((0,), random, False, 1, 30, 7)
-down_MyButton.set_config((0,), random, False, 1, 30, 7)
-right_MyButton.set_config((0,), random, False, 1, 30, 7)
-left_MyButton.set_config((0,), random, False, 1, 30, 7)
-select_MyButton.set_config((1,2,3,4,5,6,7,8,), violet, False, 1, 30, 7)
-ps_MyButton.set_config((1,2,3,4,5,6,7,8,), light_blue, False, 1, 30, 7)
-start_MyButton.set_config((1,2,3,4,5,6,7,8,), red, False, 1, 30, 7)
-square_MyButton.set_config((5,), random, True, 1, 30, 7)
-triangle_MyButton.set_config((6,), random, True, 1, 30, 7)
-r1_MyButton.set_config((8,), random, True, 1, 30, 7)
-l1_MyButton.set_config((7,), random, True, 1, 30, 7)
-circle_MyButton.set_config((3,), random, True, 1, 30, 7)
-x_MyButton.set_config((4,), green, True, 1, 30, 7)
-l2_MyButton.set_config((2,), random, True, 1, 30, 7)
-r2_MyButton.set_config((1,), random, True, 1, 30, 7)
+up_button.set_config((1,11,28,37,), violet, True, 1, 100, 4)
+down_button.set_config((1,12,28,36,), violet, True, 1, 100, 4)
+right_button.set_config((2,12,27,36,), violet, True, 1, 100, 4)
+left_button.set_config((0,12,29,36,), violet, True, 1, 100, 4)
 
-ledOptions_color = (255,0,0)
-ledOptions_profile_color_use_all_LEDs = False
-ledOptions_led_buttons = [start_MyButton,select_MyButton]
-ledOptions_start_time = 3
-ledOptions_increase_brightness = [up_MyButton]
-ledOptions_decrease_brightness = [down_MyButton]
-ledOptions_left_button = [left_MyButton]
-ledOptions_right_button = [right_MyButton]
-ledOptions_confirm = [x_MyButton]
-OnOff_button = []
+ps_button.set_config((5,14,24,35,), violet, True, 1, 100, 4)
+
+square_button.set_config((10,12,19,36,), violet, True, 1, 100, 4)
+triangle_button.set_config((8,13,21,35,), violet, True, 1, 100, 4)
+r1_button.set_config((10,13,19,35,), violet, True, 1, 100, 4)
+l1_button.set_config((9,13,20,35,), violet, True, 1, 100, 4)
+
+circle_button.set_config((9,12,20,36,), violet, True, 1, 100, 4)
+x_button.set_config((8,12,21,36,), violet, True, 1, 100, 4)
+l2_button.set_config((8,11,21,37,), violet, True, 1, 100, 4)
+r2_button.set_config((9,11,20,37,), violet, True, 1, 100, 4)
+
+options_button = ps_button
+options_increase_brightness = up_button
+options_decrease_brightness = down_button
+options_change_animation = left_button
+options_change_colour = right_button
+options_increase_speed = x_button
+options_decrease_speed = triangle_button
 rainbow_speed = 1000
+
+#------------init player led
 activate_player_led = False
 playerLED_brightness = 1
 playerLED_PIN_NUM = 16

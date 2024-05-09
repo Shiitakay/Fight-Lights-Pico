@@ -36,60 +36,19 @@ def dummy(pin):
 #timer interrupt function
 #increases timer counter for every timer interrupt
 def tick(timer):
-    init.idle_counter += 1
+    init.bg_counter += 1
     init.timer_counter += 1
     init.string_leniency += 1
 
-
-#this function is called every 30 seconds
-def save_stats(timer):
-    if config.save_stats == False:
-        return
-    
-    init.seconds_counter += 30
-    
-    lines = init.file_content
-    updated_lines = []
-            
-    for line in lines:
-        if line[0] == "#" or line == '\n':
-            continue
-        
-        name, value = line.split(":")
-        #name = name.strip()
-        value = int(value)
-                    
-        if name == 'uptime':
-            value += init.seconds_counter
-            init.idle_file_counter = 0
-            init.seconds_counter = 0
-                    
-        for button in config.button_list:
-            if button.name == name:
-                value += button.num_presses
-                button.num_presses = 0
-
-        updated_lines.append(f"{name}: {value}\n")
-    
-    content = init.header_text + ''.join(updated_lines)
-
-    with open(init.file_name, "w") as f:
-        f.write(content)
-    
-    content = [line + "\n" for line in content.split("\n")]
-    init.file_content = content
-
-
-#sets the idle_counter to the setback value which wakes the leds up from idle mode
+#sets the bg_counter to the setback value which wakes the leds up from idle mode
 def clear_led(pin):
-    init.idle_counter = init.setback_value
+    init.bg_counter = init.setback_value
 
 
 #frequenzy in hz 0.016hz = 60sec, one timer interrupt every 60seconds
 #freq=1 = 1hz = 1 interrupt every second
 #freq=62.5 = 1 interrupt every 0.016 seconds (1 Frame in a 60FPS Fighting Game)
 init.timer1.init(freq=init.frequency, mode=machine.Timer.PERIODIC, callback=tick)
-init.timer3.init(freq=1/30, mode=machine.Timer.PERIODIC, callback=save_stats) 
 
 #interrupt routine to debounce the brightness button
 #all credits to Kaspars Dambis @ https://kaspars.net/blog/micropython-button-debounce
@@ -138,6 +97,7 @@ def pixels_set(i, color):
     
 def pixels_set_range(list, color):
     for i in list:
+        #print("setting pixel " + str(i) + "to " + str(color))
         pixels_set(i, color)
 
 #sets a color at pos i, takes HSV color as value
@@ -153,39 +113,7 @@ def pixels_fill(color):
 #sets all leds to color in HSV      
 def pixels_fillHSV(colorHSV):
     colorRGB = HSVtoRGB(colorHSV)
-    pixels_fill(colorRGB)
-
-
-def print_stats():
-    f = open(init.file_name, "r")
-    lines = f.readlines()
-    values = {}
-    
-    for line in lines:
-        if line[0] == '#':
-            continue
-        
-        var_name = ""
-        value = ""
-        for i in range(len(line)):
-            if line[i] == ':':
-                i += 2
-                for j in range(i, len(line)):
-                    value += line[j]
-                break
-            var_name += line[i]
-
-        value = int(value[:-1])
-        values[var_name] = value
-    
-    uptime = values['uptime']
-    del values['uptime']
-    
-    print("-------------------------------")
-    for key, value in sorted(values.items(), key=lambda item: item[1]):
-        print("%s: %s" % (key, value))
-    print('uptime:', seconds_to_time(uptime))
-            
+    pixels_fill(colorRGB)           
             
 def seconds_to_time(seconds):
     minutes, seconds = divmod(seconds, 60)
@@ -223,6 +151,13 @@ def get_pixelcolor(pos):
     b = int((statemachine.ar[pos] & 0xFF))
     return (r,g,b)
 
+def get_lit_pixels():
+    ret_list = []
+    for i in range(0, config.led_count):
+        if int(statemachine.ar[i]) != 0:
+            ret_list.append(i)
+    return ret_list
+
 #shuffles an array
 def shuffle_array(arr):
     last_index = len(arr)-1
@@ -245,14 +180,14 @@ def inverse_ledlist(ledlist):
     return leds
         
 
-#converts the value of the idle_after variable in config.py to ticks of the timer interrupt
-#example: if idle_after = 1 in config.py, then it would take 20 ticks for 1 second to pass, at a frequency of 20hz
-def idle_after():
-    if config.idle_after == 0:
+#converts the value of the bg_after variable in config.py to ticks of the timer interrupt
+#example: if bg_after = 1 in config.py, then it would take 20 ticks for 1 second to pass, at a frequency of 20hz
+def bg_after():
+    if config.bg_after == 0:
         return 0
     else:
         ticks = 1/(1/init.frequency)
-        return ticks * config.idle_after
+        return ticks * config.bg_after
     
 def get_seconds(input):
     ticks = 1/(1/init.frequency)
@@ -396,18 +331,7 @@ def fade_val_inc(color_val, speed):
         color_val += speed
         if color_val > 100:
             color_val = 100
-    return color_val
-
-#helper function
-#return true if no button is pressed at the moment
-#returns false when a button is currently pressed
-def no_buttons_pressed():
-    for button in config.button_list:
-        if button.is_pressed == True:
-            return False
-    
-    return True
-    
+    return color_val  
     
 def set_background(background):
     #speed = 1000 #speed for colorwheel, higher = slower
@@ -624,50 +548,38 @@ def mode_select():
         if config.ledOptions_right_button:
             config.ledOptions_right_button[0].run(0)
             
-        if config.brightness_steps != 'smooth':
-            if config.ledOptions_increase_brightness and config.ledOptions_increase_brightness[0].was_pressed:
-                increase_brightness(config.brightness_steps)
-                #print("brightness:", config.brightness_mod)
-            if config.ledOptions_decrease_brightness and config.ledOptions_decrease_brightness[0].was_pressed:
-                decrease_brightness(config.brightness_steps)
-                #print("brightness:", config.brightness_mod)
+        if config.brightness_steps == 'smooth':
+            brightness_step = 0.01
         else:
-            if config.ledOptions_increase_brightness and config.ledOptions_increase_brightness[0].is_pressed:
-                increase_brightness(0.01)
-                #print("brightness:", config.brightness_mod)
-            if config.ledOptions_decrease_brightness and config.ledOptions_decrease_brightness[0].is_pressed:
-                decrease_brightness(0.01)
-                #print("brightness:", config.brightness_mod)
+            brightness_step = config.brightness_steps    
+        if config.ledOptions_increase_brightness and config.ledOptions_increase_brightness[0].was_pressed:
+            increase_brightness(brightness_step)        
+        if config.ledOptions_decrease_brightness and config.ledOptions_decrease_brightness[0].was_pressed:
+            decrease_brightness(brightness_step)             
 
             
-                
+        #check that a button is assigned for this, then check if it was pressed
+        #so that we arent waiting for an input that will never come
+        change_selection = False
         if config.ledOptions_right_button and config.ledOptions_right_button[0].was_pressed:
             init.mode_selector -= 1
-            if init.mode_selector <= 0:
-                init.mode_selector = 0
-                config_name = "config.py"
-            else:
-                config_name = "config" + str(init.mode_selector) + ".py"
-                
-            try:
-                f = open(config_name, "r")
-                f.close()
-            except OSError:
-                init.mode_selector -= 1
-                
+            change_selection = True
         if config.ledOptions_left_button and config.ledOptions_left_button[0].was_pressed:
             init.mode_selector += 1
-            config_name = "config" + str(init.mode_selector) + ".py"
-            
+            change_selection = True
+        if init.mode_selector < 0:
+            init.mode_selector = 0
+        if change_selection:
+            if init.mode_selector == 0:
+                config_name = "config.py"
+            else:
+                config_name = "config" + str(init.mode_selector) + ".py" 
             try:
                 f = open(config_name, "r")
                 f.close()
-                
             except OSError:
                 init.mode_selector -= 1
-                config_name = "config" + str(init.mode_selector) + ".py"
-                if init.mode_selector == 0:
-                    config_name = "config.py"
+                config_name = "config" + str(init.mode_selector) + ".py" 
         
 
         for button in config.ledOptions_led_buttons:
@@ -692,21 +604,24 @@ def mode_select():
                 path = os.rename('config.py', config_name)
                 path = os.rename('configtmp.py', 'config.py')
                 machine.reset()
-            
-
-                
 
 #return interpolated (r,g,b) tuble between color1 and color2 depending on t (time)
 #c1 and c2 = (r,g,b)
 #t takes values between tstart and tend
-def lerp_rgb(color1, color2, t):
-    tstart = 0
-    tend = 100
-    red = color1[0] + (color2[0] - color1[0]) * ((t-tstart) / (tend - tstart))
-    green = color1[1] + (color2[1] - color1[1]) * ((t-tstart) / (tend - tstart))
-    blue = color1[2] + (color2[2] - color1[2]) * ((t-tstart) / (tend - tstart))
+def lerp_rgb(color1, color2, t,):
+    #its all just constexpr, just put the fckin numbers in there
+    alpha = t / 100
+    red = color1[0] + (color2[0] - color1[0]) * alpha
+    green = color1[1] + (color2[1] - color1[1]) * alpha
+    blue = color1[2] + (color2[2] - color1[2]) * alpha
 
     return (int(red), int(green), int(blue))
+
+def lerp(tstart,tend,t, ystart, yend):
+    #ystart = 0
+    #yend = 255
+    y = ystart + (yend - ystart) * ((t-tstart)/(tend-tstart))
+    return y
 
 def reset_background():
     init.bg_initialized = False
@@ -719,11 +634,7 @@ def reset_background():
     
     
     
-def lerp(tstart,tend,t, ystart, yend):
-    #ystart = 0
-    #yend = 255
-    y = ystart + (yend - ystart) * ((t-tstart)/(tend-tstart))
-    return y
+
     
     
     
